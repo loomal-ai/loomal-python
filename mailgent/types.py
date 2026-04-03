@@ -126,6 +126,72 @@ class IdentityResponse:
 
 
 @dataclass
+class IdentitySummary:
+    identity_id: str
+    name: str
+    type: str
+    email: Optional[str]
+    scopes: list[str]
+    usage_count: int
+    last_used_at: Optional[str]
+    created_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> IdentitySummary:
+        return cls(
+            identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            email=data.get("email"), scopes=data.get("scopes", []),
+            usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
+            created_at=data["createdAt"],
+        )
+
+
+@dataclass
+class IdentityDetail(IdentitySummary):
+    api_key_prefix: str = ""
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> IdentityDetail:
+        return cls(
+            identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            email=data.get("email"), scopes=data.get("scopes", []),
+            usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
+            created_at=data["createdAt"], api_key_prefix=data.get("apiKeyPrefix", ""),
+        )
+
+
+@dataclass
+class CreateIdentityResponse:
+    identity_id: str
+    name: str
+    type: str
+    email_address: str
+    scopes: list[str]
+    api_key_prefix: str
+    raw_key: str
+    created_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> CreateIdentityResponse:
+        return cls(
+            identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            email_address=data["emailAddress"], scopes=data.get("scopes", []),
+            api_key_prefix=data["apiKeyPrefix"], raw_key=data["rawKey"],
+            created_at=data["createdAt"],
+        )
+
+
+@dataclass
+class RotateKeyResponse:
+    raw_key: str
+    api_key_prefix: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> RotateKeyResponse:
+        return cls(raw_key=data["rawKey"], api_key_prefix=data["apiKeyPrefix"])
+
+
+@dataclass
 class ActivityLog:
     id: str
     action: str
