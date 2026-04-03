@@ -9,7 +9,7 @@ from mailgent.types import (
 )
 from mailgent._errors import MailgentError
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Mailgent", "AsyncMailgent",
