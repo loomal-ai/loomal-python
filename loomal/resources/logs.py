@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Optional
-from hivekey.types import ActivityLog, LogsStats
+from loomal.types import ActivityLog, LogsStats
 
 
 class LogsResource:

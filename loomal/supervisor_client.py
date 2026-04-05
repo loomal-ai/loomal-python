@@ -3,21 +3,21 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from hivekey._http import SyncHttpClient, AsyncHttpClient, DEFAULT_BASE_URL
-from hivekey.resources.supervisor_identities import SupervisorIdentitiesResource, AsyncSupervisorIdentitiesResource
+from loomal._http import SyncHttpClient, AsyncHttpClient, DEFAULT_BASE_URL
+from loomal.resources.supervisor_identities import SupervisorIdentitiesResource, AsyncSupervisorIdentitiesResource
 
 
-class HivekeySupervisor:
-    """Synchronous Hivekey Supervisor client for identity management."""
+class LoomalSupervisor:
+    """Synchronous Loomal Supervisor client for identity management."""
 
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  timeout: float = 30.0) -> None:
-        resolved_key = api_key or os.environ.get("HIVEKEY_SUPERVISOR_KEY")
+        resolved_key = api_key or os.environ.get("LOOMAL_SUPERVISOR_KEY")
         if not resolved_key:
-            raise ValueError("Supervisor key is required. Pass api_key= or set HIVEKEY_SUPERVISOR_KEY env var.")
+            raise ValueError("Supervisor key is required. Pass api_key= or set LOOMAL_SUPERVISOR_KEY env var.")
 
         http = SyncHttpClient(
-            base_url=base_url or os.environ.get("HIVEKEY_API_URL", DEFAULT_BASE_URL),
+            base_url=base_url or os.environ.get("LOOMAL_API_URL", DEFAULT_BASE_URL),
             api_key=resolved_key, timeout=timeout,
         )
         self.identities = SupervisorIdentitiesResource(http)
@@ -33,17 +33,17 @@ class HivekeySupervisor:
         self.close()
 
 
-class AsyncHivekeySupervisor:
-    """Asynchronous Hivekey Supervisor client for identity management."""
+class AsyncLoomalSupervisor:
+    """Asynchronous Loomal Supervisor client for identity management."""
 
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  timeout: float = 30.0) -> None:
-        resolved_key = api_key or os.environ.get("HIVEKEY_SUPERVISOR_KEY")
+        resolved_key = api_key or os.environ.get("LOOMAL_SUPERVISOR_KEY")
         if not resolved_key:
-            raise ValueError("Supervisor key is required. Pass api_key= or set HIVEKEY_SUPERVISOR_KEY env var.")
+            raise ValueError("Supervisor key is required. Pass api_key= or set LOOMAL_SUPERVISOR_KEY env var.")
 
         http = AsyncHttpClient(
-            base_url=base_url or os.environ.get("HIVEKEY_API_URL", DEFAULT_BASE_URL),
+            base_url=base_url or os.environ.get("LOOMAL_API_URL", DEFAULT_BASE_URL),
             api_key=resolved_key, timeout=timeout,
         )
         self.identities = AsyncSupervisorIdentitiesResource(http)

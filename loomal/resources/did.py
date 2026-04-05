@@ -1,5 +1,5 @@
 from __future__ import annotations
-from hivekey.types import DidDocument
+from loomal.types import DidDocument
 
 
 class DidResource:

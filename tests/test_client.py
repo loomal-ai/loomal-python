@@ -1,17 +1,17 @@
 import os
 import pytest
-from hivekey import Hivekey, AsyncHivekey
-from hivekey._errors import HivekeyError
+from loomal import Loomal, AsyncLoomal
+from loomal._errors import LoomalError
 
 
-class TestHivekeyClient:
+class TestLoomalClient:
     def test_requires_api_key(self):
-        os.environ.pop("HIVEKEY_API_KEY", None)
+        os.environ.pop("LOOMAL_API_KEY", None)
         with pytest.raises(ValueError, match="API key is required"):
-            Hivekey()
+            Loomal()
 
     def test_creates_with_api_key(self):
-        client = Hivekey(api_key="mgent-test123")
+        client = Loomal(api_key="mgent-test123")
         assert client.identity is not None
         assert client.mail is not None
         assert client.vault is not None
@@ -20,33 +20,33 @@ class TestHivekeyClient:
         client.close()
 
     def test_reads_env_var(self):
-        os.environ["HIVEKEY_API_KEY"] = "mgent-fromenv"
+        os.environ["LOOMAL_API_KEY"] = "mgent-fromenv"
         try:
-            client = Hivekey()
+            client = Loomal()
             assert client.identity is not None
             client.close()
         finally:
-            del os.environ["HIVEKEY_API_KEY"]
+            del os.environ["LOOMAL_API_KEY"]
 
     def test_context_manager(self):
-        with Hivekey(api_key="mgent-test") as client:
+        with Loomal(api_key="mgent-test") as client:
             assert client.identity is not None
 
 
-class TestAsyncHivekeyClient:
+class TestAsyncLoomalClient:
     def test_requires_api_key(self):
-        os.environ.pop("HIVEKEY_API_KEY", None)
+        os.environ.pop("LOOMAL_API_KEY", None)
         with pytest.raises(ValueError, match="API key is required"):
-            AsyncHivekey()
+            AsyncLoomal()
 
 
-class TestHivekeyError:
+class TestLoomalError:
     def test_attributes(self):
-        err = HivekeyError(401, "unauthorized", "Invalid API key")
+        err = LoomalError(401, "unauthorized", "Invalid API key")
         assert err.status == 401
         assert err.code == "unauthorized"
         assert str(err) == "Invalid API key"
 
     def test_repr(self):
-        err = HivekeyError(404, "not_found", "Not found")
+        err = LoomalError(404, "not_found", "Not found")
         assert "404" in repr(err)

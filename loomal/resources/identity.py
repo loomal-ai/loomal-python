@@ -1,5 +1,5 @@
 from __future__ import annotations
-from hivekey.types import IdentityResponse
+from loomal.types import IdentityResponse
 
 
 class IdentityResource:

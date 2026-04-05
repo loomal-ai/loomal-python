@@ -1,23 +1,23 @@
-# Hivekey Python SDK
+# Loomal Python SDK
 
-The official Python SDK for the [Hivekey API](https://hivekey.ai) -- identity infrastructure for AI agents.
+The official Python SDK for the [Loomal API](https://loomal.ai) -- identity infrastructure for AI agents.
 
-[![PyPI version](https://img.shields.io/pypi/v/hivekey.svg)](https://pypi.org/project/hivekey/)
-[![Python 3.9+](https://img.shields.io/pypi/pyversions/hivekey.svg)](https://pypi.org/project/hivekey/)
+[![PyPI version](https://img.shields.io/pypi/v/loomal.svg)](https://pypi.org/project/loomal/)
+[![Python 3.9+](https://img.shields.io/pypi/pyversions/loomal.svg)](https://pypi.org/project/loomal/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
 ```bash
-pip install hivekey
+pip install loomal
 ```
 
 ## Quick start
 
 ```python
-from hivekey import Hivekey
+from loomal import Loomal
 
-client = Hivekey(api_key="mgent-...")
+client = Loomal(api_key="mgent-...")
 
 me = client.identity.whoami()
 print(me.email)
@@ -25,16 +25,16 @@ print(me.email)
 client.mail.send(
     to=["colleague@example.com"],
     subject="Hello from my agent",
-    text="Sent via the Hivekey Python SDK.",
+    text="Sent via the Loomal Python SDK.",
 )
 ```
 
 ## Async usage
 
 ```python
-from hivekey import AsyncHivekey
+from loomal import AsyncLoomal
 
-async with AsyncHivekey(api_key="mgent-...") as client:
+async with AsyncLoomal(api_key="mgent-...") as client:
     me = await client.identity.whoami()
     await client.mail.send(
         to=["colleague@example.com"],
@@ -45,22 +45,22 @@ async with AsyncHivekey(api_key="mgent-...") as client:
 
 ## Authentication
 
-Pass your API key directly, or set the `HIVEKEY_API_KEY` environment variable:
+Pass your API key directly, or set the `LOOMAL_API_KEY` environment variable:
 
 ```python
 # Explicit
-client = Hivekey(api_key="mgent-...")
+client = Loomal(api_key="mgent-...")
 
 # From environment
 import os
-os.environ["HIVEKEY_API_KEY"] = "mgent-..."
-client = Hivekey()
+os.environ["LOOMAL_API_KEY"] = "mgent-..."
+client = Loomal()
 ```
 
-Both `Hivekey` and `AsyncHivekey` support context managers for automatic resource cleanup:
+Both `Loomal` and `AsyncLoomal` support context managers for automatic resource cleanup:
 
 ```python
-with Hivekey() as client:
+with Loomal() as client:
     me = client.identity.whoami()
 ```
 
@@ -149,14 +149,14 @@ domain_doc = client.did.resolve_domain()
 
 ## Error handling
 
-All API errors raise `HivekeyError` with structured fields:
+All API errors raise `LoomalError` with structured fields:
 
 ```python
-from hivekey import HivekeyError
+from loomal import LoomalError
 
 try:
     client.mail.send(to=["a@b.com"], subject="Hi", text="Hello")
-except HivekeyError as e:
+except LoomalError as e:
     print(e.status)   # HTTP status code
     print(e.code)     # Error code string
     print(e.message)  # Human-readable message
@@ -188,10 +188,10 @@ The SDK returns typed dataclasses, not raw dictionaries. API responses are autom
 
 ## Links
 
-- [Documentation](https://docs.hivekey.ai)
-- [Console](https://console.hivekey.ai)
-- [Website](https://hivekey.ai)
-- [PyPI](https://pypi.org/project/hivekey/)
+- [Documentation](https://docs.loomal.ai)
+- [Console](https://console.loomal.ai)
+- [Website](https://loomal.ai)
+- [PyPI](https://pypi.org/project/loomal/)
 
 ## License
 
