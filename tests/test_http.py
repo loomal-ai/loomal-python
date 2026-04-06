@@ -10,7 +10,7 @@ class TestSyncHttpClient:
     def test_get_success(self):
         respx.get("https://api.loomal.ai/v0/whoami").mock(
             return_value=httpx.Response(200, json={"identityId": "id-123"}))
-        client = SyncHttpClient("https://api.loomal.ai", "mgent-test")
+        client = SyncHttpClient("https://api.loomal.ai", "loid-test")
         result = client.get("/v0/whoami")
         assert result["identityId"] == "id-123"
         client.close()
@@ -19,16 +19,16 @@ class TestSyncHttpClient:
     def test_auth_header(self):
         route = respx.get("https://api.loomal.ai/v0/whoami").mock(
             return_value=httpx.Response(200, json={}))
-        client = SyncHttpClient("https://api.loomal.ai", "mgent-secret")
+        client = SyncHttpClient("https://api.loomal.ai", "loid-secret")
         client.get("/v0/whoami")
-        assert route.calls[0].request.headers["authorization"] == "Bearer mgent-secret"
+        assert route.calls[0].request.headers["authorization"] == "Bearer loid-secret"
         client.close()
 
     @respx.mock
     def test_post_with_body(self):
         respx.post("https://api.loomal.ai/v0/messages/send").mock(
             return_value=httpx.Response(201, json={"messageId": "msg-1"}))
-        client = SyncHttpClient("https://api.loomal.ai", "mgent-test")
+        client = SyncHttpClient("https://api.loomal.ai", "loid-test")
         result = client.post("/v0/messages/send", json={"to": ["a@b.com"], "subject": "Hi", "text": "Hello"})
         assert result["messageId"] == "msg-1"
         client.close()
@@ -37,7 +37,7 @@ class TestSyncHttpClient:
     def test_delete_204(self):
         respx.delete("https://api.loomal.ai/v0/messages/msg-1").mock(
             return_value=httpx.Response(204))
-        client = SyncHttpClient("https://api.loomal.ai", "mgent-test")
+        client = SyncHttpClient("https://api.loomal.ai", "loid-test")
         assert client.delete("/v0/messages/msg-1") is None
         client.close()
 
@@ -45,7 +45,7 @@ class TestSyncHttpClient:
     def test_error_raises(self):
         respx.get("https://api.loomal.ai/v0/whoami").mock(
             return_value=httpx.Response(401, json={"error": "unauthorized", "message": "Invalid API key"}))
-        client = SyncHttpClient("https://api.loomal.ai", "mgent-bad")
+        client = SyncHttpClient("https://api.loomal.ai", "loid-bad")
         with pytest.raises(LoomalError) as exc_info:
             client.get("/v0/whoami")
         assert exc_info.value.status == 401
@@ -58,7 +58,7 @@ class TestAsyncHttpClient:
     async def test_get_success(self):
         respx.get("https://api.loomal.ai/v0/whoami").mock(
             return_value=httpx.Response(200, json={"identityId": "id-123"}))
-        client = AsyncHttpClient("https://api.loomal.ai", "mgent-test")
+        client = AsyncHttpClient("https://api.loomal.ai", "loid-test")
         result = await client.get("/v0/whoami")
         assert result["identityId"] == "id-123"
         await client.close()
@@ -68,7 +68,7 @@ class TestAsyncHttpClient:
     async def test_error_raises(self):
         respx.get("https://api.loomal.ai/v0/whoami").mock(
             return_value=httpx.Response(403, json={"error": "forbidden", "message": "No access"}))
-        client = AsyncHttpClient("https://api.loomal.ai", "mgent-test")
+        client = AsyncHttpClient("https://api.loomal.ai", "loid-test")
         with pytest.raises(LoomalError) as exc_info:
             await client.get("/v0/whoami")
         assert exc_info.value.status == 403

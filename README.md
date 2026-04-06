@@ -17,7 +17,7 @@ pip install loomal
 ```python
 from loomal import Loomal
 
-client = Loomal(api_key="mgent-...")
+client = Loomal(api_key="loid-...")
 
 me = client.identity.whoami()
 print(me.email)
@@ -34,7 +34,7 @@ client.mail.send(
 ```python
 from loomal import AsyncLoomal
 
-async with AsyncLoomal(api_key="mgent-...") as client:
+async with AsyncLoomal(api_key="loid-...") as client:
     me = await client.identity.whoami()
     await client.mail.send(
         to=["colleague@example.com"],
@@ -49,11 +49,11 @@ Pass your API key directly, or set the `LOOMAL_API_KEY` environment variable:
 
 ```python
 # Explicit
-client = Loomal(api_key="mgent-...")
+client = Loomal(api_key="loid-...")
 
 # From environment
 import os
-os.environ["LOOMAL_API_KEY"] = "mgent-..."
+os.environ["LOOMAL_API_KEY"] = "loid-..."
 client = Loomal()
 ```
 

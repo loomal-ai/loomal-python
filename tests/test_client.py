@@ -11,7 +11,7 @@ class TestLoomalClient:
             Loomal()
 
     def test_creates_with_api_key(self):
-        client = Loomal(api_key="mgent-test123")
+        client = Loomal(api_key="loid-test123")
         assert client.identity is not None
         assert client.mail is not None
         assert client.vault is not None
@@ -20,7 +20,7 @@ class TestLoomalClient:
         client.close()
 
     def test_reads_env_var(self):
-        os.environ["LOOMAL_API_KEY"] = "mgent-fromenv"
+        os.environ["LOOMAL_API_KEY"] = "loid-fromenv"
         try:
             client = Loomal()
             assert client.identity is not None
@@ -29,7 +29,7 @@ class TestLoomalClient:
             del os.environ["LOOMAL_API_KEY"]
 
     def test_context_manager(self):
-        with Loomal(api_key="mgent-test") as client:
+        with Loomal(api_key="loid-test") as client:
             assert client.identity is not None
 
 

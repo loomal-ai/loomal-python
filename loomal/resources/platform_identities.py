@@ -3,7 +3,7 @@ from typing import Any, Optional
 from loomal.types import IdentitySummary, IdentityDetail, CreateIdentityResponse, RotateKeyResponse
 
 
-class SupervisorIdentitiesResource:
+class PlatformIdentitiesResource:
     def __init__(self, http):
         self._http = http
 
@@ -43,7 +43,7 @@ class SupervisorIdentitiesResource:
         return self._http.patch(f"/v0/platform/identities/{identity_id}", json=body)
 
 
-class AsyncSupervisorIdentitiesResource:
+class AsyncPlatformIdentitiesResource:
     def __init__(self, http):
         self._http = http
 

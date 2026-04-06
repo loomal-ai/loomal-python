@@ -4,23 +4,23 @@ import os
 from typing import Optional
 
 from loomal._http import SyncHttpClient, AsyncHttpClient, DEFAULT_BASE_URL
-from loomal.resources.supervisor_identities import SupervisorIdentitiesResource, AsyncSupervisorIdentitiesResource
+from loomal.resources.platform_identities import PlatformIdentitiesResource, AsyncPlatformIdentitiesResource
 
 
-class LoomalSupervisor:
-    """Synchronous Loomal Supervisor client for identity management."""
+class LoomalPlatform:
+    """Synchronous Loomal Platform client for identity management."""
 
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  timeout: float = 30.0) -> None:
-        resolved_key = api_key or os.environ.get("LOOMAL_SUPERVISOR_KEY")
+        resolved_key = api_key or os.environ.get("LOOMAL_PLATFORM_KEY")
         if not resolved_key:
-            raise ValueError("Supervisor key is required. Pass api_key= or set LOOMAL_SUPERVISOR_KEY env var.")
+            raise ValueError("Platform key is required. Pass api_key= or set LOOMAL_PLATFORM_KEY env var.")
 
         http = SyncHttpClient(
             base_url=base_url or os.environ.get("LOOMAL_API_URL", DEFAULT_BASE_URL),
             api_key=resolved_key, timeout=timeout,
         )
-        self.identities = SupervisorIdentitiesResource(http)
+        self.identities = PlatformIdentitiesResource(http)
         self._http = http
 
     def close(self) -> None:
@@ -33,20 +33,20 @@ class LoomalSupervisor:
         self.close()
 
 
-class AsyncLoomalSupervisor:
-    """Asynchronous Loomal Supervisor client for identity management."""
+class AsyncLoomalPlatform:
+    """Asynchronous Loomal Platform client for identity management."""
 
     def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  timeout: float = 30.0) -> None:
-        resolved_key = api_key or os.environ.get("LOOMAL_SUPERVISOR_KEY")
+        resolved_key = api_key or os.environ.get("LOOMAL_PLATFORM_KEY")
         if not resolved_key:
-            raise ValueError("Supervisor key is required. Pass api_key= or set LOOMAL_SUPERVISOR_KEY env var.")
+            raise ValueError("Platform key is required. Pass api_key= or set LOOMAL_PLATFORM_KEY env var.")
 
         http = AsyncHttpClient(
             base_url=base_url or os.environ.get("LOOMAL_API_URL", DEFAULT_BASE_URL),
             api_key=resolved_key, timeout=timeout,
         )
-        self.identities = AsyncSupervisorIdentitiesResource(http)
+        self.identities = AsyncPlatformIdentitiesResource(http)
         self._http = http
 
     async def close(self) -> None:
