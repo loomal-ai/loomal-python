@@ -77,8 +77,8 @@ class TestTotpResponse:
 class TestDidDocument:
     def test_from_dict(self):
         doc = DidDocument.from_dict({
-            "@context": ["https://www.w3.org/ns/did/v1"], "id": "did:web:api.mailgent.dev",
+            "@context": ["https://www.w3.org/ns/did/v1"], "id": "did:web:api.loomal.ai",
             "service": [{"id": "#mcp", "type": "MCPServer", "serviceEndpoint": "https://api.loomal.ai/mcp"}],
         })
-        assert doc.id == "did:web:api.mailgent.dev"
+        assert doc.id == "did:web:api.loomal.ai"
         assert len(doc.service) == 1
