@@ -2,15 +2,17 @@
 
 The official Python SDK for the [Loomal API](https://loomal.ai) -- identity infrastructure for AI agents.
 
-[![PyPI version](https://img.shields.io/pypi/v/loomal.svg)](https://pypi.org/project/loomal/)
-[![Python 3.9+](https://img.shields.io/pypi/pyversions/loomal.svg)](https://pypi.org/project/loomal/)
+[![PyPI version](https://img.shields.io/pypi/v/loomal-sdk.svg)](https://pypi.org/project/loomal-sdk/)
+[![Python 3.9+](https://img.shields.io/pypi/pyversions/loomal-sdk.svg)](https://pypi.org/project/loomal-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Installation
 
 ```bash
-pip install loomal
+pip install loomal-sdk
 ```
+
+> The distribution is `loomal-sdk` on PyPI, but the import name is `loomal`.
 
 ## Quick start
 
@@ -73,79 +75,9 @@ me = client.identity.whoami()
 print(me.email, me.display_name)
 ```
 
-### Mail
+### More resources
 
-```python
-# Send
-msg = client.mail.send(
-    to=["alice@example.com"],
-    subject="Weekly report",
-    text="Plain text body",
-    html="<h1>HTML body</h1>",
-    cc=["bob@example.com"],
-)
-
-# Reply
-client.mail.reply(message_id=msg.id, text="Got it, thanks!")
-
-# List and read
-messages = client.mail.list_messages(limit=10, labels=["INBOX"])
-msg = client.mail.get_message(message_id="msg_123")
-
-# Labels
-client.mail.update_labels("msg_123", add_labels=["IMPORTANT"], remove_labels=["UNREAD"])
-
-# Threads
-threads = client.mail.list_threads(limit=5)
-thread = client.mail.get_thread(thread_id="thread_123")
-
-# Delete
-client.mail.delete_message("msg_123")
-client.mail.delete_thread("thread_123")
-```
-
-### Vault
-
-```python
-# Store a credential
-client.vault.store(
-    name="openai-key",
-    type="api_key",
-    data={"api_key": "sk-..."},
-    metadata={"service": "openai"},
-)
-
-# Retrieve
-cred = client.vault.get("openai-key")
-print(cred.data)
-
-# List all
-creds = client.vault.list()
-
-# Generate a TOTP code
-totp = client.vault.totp("github-2fa")
-print(totp.code)
-
-# Delete
-client.vault.delete("openai-key")
-```
-
-### Activity Logs
-
-```python
-# List logs with filters
-logs = client.logs.list(limit=20, category="mail", status="success")
-
-# Aggregate stats
-stats = client.logs.stats()
-```
-
-### DID (Decentralized Identifiers)
-
-```python
-doc = client.did.resolve(identity_id="id_123")
-domain_doc = client.did.resolve_domain()
-```
+The SDK also exposes `client.mail`, `client.calendar`, `client.vault`, `client.logs`, and `client.did`. See the full reference at **[docs.loomal.ai](https://docs.loomal.ai)** for request/response shapes, pagination, and end-to-end examples.
 
 ## Error handling
 
@@ -191,7 +123,7 @@ The SDK returns typed dataclasses, not raw dictionaries. API responses are autom
 - [Documentation](https://docs.loomal.ai)
 - [Console](https://console.loomal.ai)
 - [Website](https://loomal.ai)
-- [PyPI](https://pypi.org/project/loomal/)
+- [PyPI](https://pypi.org/project/loomal-sdk/)
 
 ## License
 
