@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Any, Optional
+from urllib.parse import quote
 from loomal.types import MessageResponse, ThreadResponse, ThreadDetailResponse
 
 
@@ -58,6 +59,17 @@ class MailResource:
     def delete_thread(self, thread_id: str) -> None:
         self._http.delete(f"/v0/threads/{thread_id}")
 
+    # --- Email Rules (Allow/Block Lists) ---
+
+    def list_rules(self) -> dict[str, Any]:
+        return self._http.get("/v0/email-rules")
+
+    def add_rule(self, type: str, scope: str, value: str) -> dict[str, Any]:
+        return self._http.post("/v0/email-rules", json={"type": type, "scope": scope, "value": value})
+
+    def delete_rule(self, rule_id: str) -> None:
+        self._http.delete(f"/v0/email-rules/{quote(rule_id, safe='')}")
+
 
 class AsyncMailResource:
     def __init__(self, http):
@@ -113,3 +125,14 @@ class AsyncMailResource:
 
     async def delete_thread(self, thread_id: str) -> None:
         await self._http.delete(f"/v0/threads/{thread_id}")
+
+    # --- Email Rules (Allow/Block Lists) ---
+
+    async def list_rules(self) -> dict[str, Any]:
+        return await self._http.get("/v0/email-rules")
+
+    async def add_rule(self, type: str, scope: str, value: str) -> dict[str, Any]:
+        return await self._http.post("/v0/email-rules", json={"type": type, "scope": scope, "value": value})
+
+    async def delete_rule(self, rule_id: str) -> None:
+        await self._http.delete(f"/v0/email-rules/{rule_id}")
