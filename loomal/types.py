@@ -1,7 +1,55 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Literal, Optional, TypedDict
+
+
+VaultCredentialType = Literal[
+    "LOGIN", "API_KEY", "OAUTH", "TOTP", "SSH_KEY",
+    "DATABASE", "SMTP", "AWS", "CERTIFICATE",
+    "CARD", "SHIPPING_ADDRESS", "CUSTOM",
+]
+
+
+class ApiKeySecretData(TypedDict):
+    """Single API key / secret credential data."""
+    key: str
+
+
+class ApiKeyClientPairData(TypedDict):
+    """OAuth-style client credentials (client id + secret)."""
+    clientId: str
+    secret: str
+
+
+class CardData(TypedDict, total=False):
+    """Payment card stored as an encrypted credential.
+
+    This is password-manager-style secret storage, not a payment processor.
+    """
+    cardholder: str
+    number: str
+    expMonth: str
+    expYear: str
+    cvc: str
+    zip: str
+
+
+class CardMetadata(TypedDict, total=False):
+    brand: str
+    last4: str
+
+
+class ShippingAddressData(TypedDict, total=False):
+    """Shipping / mailing address stored as an encrypted credential."""
+    name: str
+    line1: str
+    line2: str
+    city: str
+    state: str
+    postcode: str
+    country: str
+    phone: str
 
 
 @dataclass
