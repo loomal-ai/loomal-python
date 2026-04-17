@@ -305,9 +305,25 @@ class LogsStats:
 class TotpResponse:
     code: str
     remaining: int
+    backup_codes_remaining: int = 0
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> TotpResponse:
+        return cls(
+            code=data["code"],
+            remaining=data["remaining"],
+            backup_codes_remaining=data.get("backupCodesRemaining", 0),
+        )
+
+
+@dataclass
+class TotpBackupResponse:
+    """One single-use TOTP backup code, atomically consumed server-side."""
+    code: str
+    remaining: int
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TotpBackupResponse:
         return cls(code=data["code"], remaining=data["remaining"])
 
 

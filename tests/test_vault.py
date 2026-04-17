@@ -1,8 +1,11 @@
 import json
+import os
 
 import httpx
+import pytest
 import respx
-from loomal import Loomal
+from loomal import AsyncLoomal, Loomal
+from loomal._errors import LoomalError
 
 
 _STORED = {
@@ -102,4 +105,157 @@ class TestVaultStoreHelpers:
         body = _body(route)
         assert body["type"] == "DATABASE"
         assert body["data"]["password"] == "s3cr3t"
+        client.close()
+
+
+class TestVaultTotpSync:
+    @respx.mock
+    def test_totp_includes_backup_codes_remaining(self):
+        respx.get("https://api.loomal.ai/v0/vault/github-2fa/totp").mock(
+            return_value=httpx.Response(200, json={"code": "123456", "remaining": 22, "backupCodesRemaining": 4}))
+        client = Loomal(api_key="loid-test")
+        res = client.vault.totp("github-2fa")
+        assert res.code == "123456"
+        assert res.remaining == 22
+        assert res.backup_codes_remaining == 4
+        client.close()
+
+    @respx.mock
+    def test_totp_defaults_backup_codes_remaining_to_zero(self):
+        respx.get("https://api.loomal.ai/v0/vault/legacy/totp").mock(
+            return_value=httpx.Response(200, json={"code": "654321", "remaining": 17}))
+        client = Loomal(api_key="loid-test")
+        res = client.vault.totp("legacy")
+        assert res.backup_codes_remaining == 0
+        client.close()
+
+    @respx.mock
+    def test_totp_use_backup_posts_and_returns_parsed_response(self):
+        route = respx.post("https://api.loomal.ai/v0/vault/github-2fa/totp/backup").mock(
+            return_value=httpx.Response(200, json={"code": "bk-aaaa-1111", "remaining": 3}))
+        client = Loomal(api_key="loid-test")
+        res = client.vault.totp_use_backup("github-2fa")
+        assert res.code == "bk-aaaa-1111"
+        assert res.remaining == 3
+        assert route.called
+        client.close()
+
+    @respx.mock
+    def test_totp_use_backup_accepts_arbitrary_text_codes(self):
+        respx.post("https://api.loomal.ai/v0/vault/x/totp/backup").mock(
+            return_value=httpx.Response(200, json={"code": "letters-AND-123!", "remaining": 0}))
+        client = Loomal(api_key="loid-test")
+        res = client.vault.totp_use_backup("x")
+        assert res.code == "letters-AND-123!"
+        assert res.remaining == 0
+        client.close()
+
+    @respx.mock
+    def test_totp_use_backup_raises_on_400(self):
+        respx.post("https://api.loomal.ai/v0/vault/drained/totp/backup").mock(
+            return_value=httpx.Response(400, json={"error": "bad_request", "message": "No unused backup codes remaining"}))
+        client = Loomal(api_key="loid-test")
+        with pytest.raises(LoomalError):
+            client.vault.totp_use_backup("drained")
+        client.close()
+
+    @respx.mock
+    def test_totp_use_backup_raises_on_404(self):
+        respx.post("https://api.loomal.ai/v0/vault/missing/totp/backup").mock(
+            return_value=httpx.Response(404, json={"error": "not_found", "message": "Credential not found"}))
+        client = Loomal(api_key="loid-test")
+        with pytest.raises(LoomalError):
+            client.vault.totp_use_backup("missing")
+        client.close()
+
+
+class TestVaultTotpAsync:
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_totp_includes_backup_codes_remaining(self):
+        respx.get("https://api.loomal.ai/v0/vault/github-2fa/totp").mock(
+            return_value=httpx.Response(200, json={"code": "123456", "remaining": 22, "backupCodesRemaining": 4}))
+        client = AsyncLoomal(api_key="loid-test")
+        res = await client.vault.totp("github-2fa")
+        assert res.backup_codes_remaining == 4
+        await client.close()
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_totp_use_backup_posts(self):
+        respx.post("https://api.loomal.ai/v0/vault/github-2fa/totp/backup").mock(
+            return_value=httpx.Response(200, json={"code": "bk-cccc-3333", "remaining": 1}))
+        client = AsyncLoomal(api_key="loid-test")
+        res = await client.vault.totp_use_backup("github-2fa")
+        assert res.code == "bk-cccc-3333"
+        assert res.remaining == 1
+        await client.close()
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_totp_use_backup_raises_on_error(self):
+        respx.post("https://api.loomal.ai/v0/vault/drained/totp/backup").mock(
+            return_value=httpx.Response(400, json={"error": "bad_request", "message": "No unused backup codes remaining"}))
+        client = AsyncLoomal(api_key="loid-test")
+        with pytest.raises(LoomalError):
+            await client.vault.totp_use_backup("drained")
+        await client.close()
+
+
+_has_live = bool(os.environ.get("LOOMAL_API_URL"))
+
+
+@pytest.mark.skipif(not _has_live, reason="LOOMAL_API_URL not set")
+class TestVaultIntegration:
+    def _client(self):
+        return Loomal(api_key=os.environ["LOOMAL_API_KEY"], base_url=os.environ["LOOMAL_API_URL"])
+
+    def _cred(self):
+        return os.environ.get("LOOMAL_TEST_CRED", "test-totp-python")
+
+    def test_totp_has_backup_codes_remaining(self):
+        client = self._client()
+        res = client.vault.totp(self._cred())
+        assert isinstance(res.code, str) and len(res.code) == 6
+        assert isinstance(res.backup_codes_remaining, int)
+        assert res.backup_codes_remaining >= 0
+        client.close()
+
+    def test_totp_use_backup_consumes_a_code(self):
+        client = self._client()
+        before = client.vault.totp(self._cred()).backup_codes_remaining
+        if before == 0:
+            return
+        used = client.vault.totp_use_backup(self._cred())
+        assert isinstance(used.code, str) and len(used.code) > 0
+        assert used.remaining == before - 1
+        client.close()
+
+    def test_totp_use_backup_consecutive_codes_differ(self):
+        client = self._client()
+        before = client.vault.totp(self._cred()).backup_codes_remaining
+        if before < 2:
+            return
+        a = client.vault.totp_use_backup(self._cred())
+        b = client.vault.totp_use_backup(self._cred())
+        assert a.code != b.code
+        client.close()
+
+    def test_totp_use_backup_400_when_exhausted(self):
+        client = self._client()
+        safety = 20
+        while safety > 0:
+            safety -= 1
+            try:
+                client.vault.totp_use_backup(self._cred())
+            except LoomalError:
+                break
+        with pytest.raises(LoomalError):
+            client.vault.totp_use_backup(self._cred())
+        client.close()
+
+    def test_totp_use_backup_404_for_missing(self):
+        client = self._client()
+        with pytest.raises(LoomalError):
+            client.vault.totp_use_backup("__definitely_not_real__")
         client.close()
