@@ -8,11 +8,11 @@ from loomal.types import (
     CredentialMetadata, CredentialWithData, IdentityResponse,
     IdentitySummary, IdentityDetail, CreateIdentityResponse, RotateKeyResponse,
     CalendarEvent,
-    ActivityLog, LogsStats, TotpResponse, DidDocument,
+    ActivityLog, LogsStats, TotpResponse, TotpBackupResponse, DidDocument,
 )
 from loomal._errors import LoomalError
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Loomal", "AsyncLoomal",

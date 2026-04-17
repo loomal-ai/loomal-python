@@ -7,6 +7,7 @@ from loomal.types import (
     CredentialMetadata,
     CredentialWithData,
     ShippingAddressData,
+    TotpBackupResponse,
     TotpResponse,
 )
 
@@ -70,6 +71,15 @@ class VaultResource:
     def totp(self, name: str) -> TotpResponse:
         return TotpResponse.from_dict(self._http.get(f"/v0/vault/{name}/totp"))
 
+    def totp_use_backup(self, name: str) -> TotpBackupResponse:
+        """Atomically consume one single-use TOTP backup code.
+
+        The popped code is moved server-side from ``data.backupCodes`` into
+        ``data.usedBackupCodes`` (audit trail) and returned. Raises on 400
+        when no codes remain.
+        """
+        return TotpBackupResponse.from_dict(self._http.post(f"/v0/vault/{name}/totp/backup"))
+
 
 class AsyncVaultResource:
     def __init__(self, http):
@@ -118,3 +128,7 @@ class AsyncVaultResource:
 
     async def totp(self, name: str) -> TotpResponse:
         return TotpResponse.from_dict(await self._http.get(f"/v0/vault/{name}/totp"))
+
+    async def totp_use_backup(self, name: str) -> TotpBackupResponse:
+        """Atomically consume one single-use TOTP backup code (async variant)."""
+        return TotpBackupResponse.from_dict(await self._http.post(f"/v0/vault/{name}/totp/backup"))
