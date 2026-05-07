@@ -1,6 +1,6 @@
 # Loomal Python SDK
 
-The official Python SDK for the [Loomal API](https://loomal.ai) -- identity infrastructure for AI agents.
+The official Python SDK for the [Loomal API](https://loomal.ai) -- identity, mail, vault, calendar, and **Loomal Pay** for AI agents.
 
 [![PyPI version](https://img.shields.io/pypi/v/loomal-sdk.svg)](https://pypi.org/project/loomal-sdk/)
 [![Python 3.9+](https://img.shields.io/pypi/pyversions/loomal-sdk.svg)](https://pypi.org/project/loomal-sdk/)
@@ -9,10 +9,44 @@ The official Python SDK for the [Loomal API](https://loomal.ai) -- identity infr
 ## Installation
 
 ```bash
-pip install loomal-sdk
+pip install loomal-sdk          # core SDK
+pip install loomal-sdk[fastapi] # core SDK + FastAPI paywall middleware
 ```
 
 > The distribution is `loomal-sdk` on PyPI, but the import name is `loomal`.
+
+## Loomal Pay paywall (FastAPI)
+
+Charge USDC per call on top of any FastAPI route. The dependency does the
+two-call x402 flow against `api.loomal.ai` for you.
+
+```python
+from fastapi import FastAPI, Depends
+from loomal.paywall import require_payment
+
+app = FastAPI()
+
+@app.get(
+    "/api/search",
+    dependencies=[Depends(require_payment(amount="0.01"))],
+)
+def search():
+    return {"results": [...]}
+```
+
+The dependency reads your seller API key from `LOOMAL_API_KEY` (or
+`SELLER_LOOMAL_API_KEY`) by default. Pass `api_key=` to override.
+
+Settled payments return a signed receipt and an
+[on-chain USDC transfer on Base](https://basescan.org). See the
+[full payments guide](https://docs.loomal.ai/payments) for the
+protocol shape and webhook configuration.
+
+For non-FastAPI frameworks, the lower-level helpers are exposed too:
+
+```python
+from loomal.paywall import build_challenge_async, verify_and_settle_async, PaywallConfig, PaywallRouteOptions
+```
 
 ## Quick start
 
