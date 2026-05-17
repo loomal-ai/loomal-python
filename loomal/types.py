@@ -150,6 +150,17 @@ class CredentialWithData(CredentialMetadata):
         )
 
 
+IdentityPurpose = Literal["SELLER", "BUYER"]
+"""SELLER projects accept x402 payments on registered endpoints (their server
+imports loomal.paywall.* middleware). BUYER projects spend via mandates and
+own the agent infrastructure (inbox, vault, calendar, identity signing) used
+by autonomous agents.
+
+Picked at project creation; BUYER is the default. Branch on this when your
+code needs to behave differently per role.
+"""
+
+
 @dataclass
 class IdentityResponse:
     identity_id: str
@@ -157,6 +168,8 @@ class IdentityResponse:
     email: str
     display_name: str
     type: str
+    #: ``"SELLER"`` or ``"BUYER"``. Set at project creation; BUYER is the default.
+    purpose: IdentityPurpose
     scopes: list[str]
     usage_count: int
     last_used_at: Optional[str]
@@ -167,7 +180,8 @@ class IdentityResponse:
         return cls(
             identity_id=data["identityId"], name=data["name"],
             email=data.get("email", ""), display_name=data.get("displayName", ""),
-            type=data["type"], scopes=data.get("scopes", []),
+            type=data["type"], purpose=data["purpose"],
+            scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"],
         )
@@ -178,6 +192,7 @@ class IdentitySummary:
     identity_id: str
     name: str
     type: str
+    purpose: IdentityPurpose
     email: Optional[str]
     scopes: list[str]
     usage_count: int
@@ -188,6 +203,7 @@ class IdentitySummary:
     def from_dict(cls, data: dict[str, Any]) -> IdentitySummary:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            purpose=data["purpose"],
             email=data.get("email"), scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"],
@@ -202,6 +218,7 @@ class IdentityDetail(IdentitySummary):
     def from_dict(cls, data: dict[str, Any]) -> IdentityDetail:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            purpose=data["purpose"],
             email=data.get("email"), scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"], api_key_prefix=data.get("apiKeyPrefix", ""),
@@ -213,6 +230,7 @@ class CreateIdentityResponse:
     identity_id: str
     name: str
     type: str
+    purpose: IdentityPurpose
     email_address: str
     scopes: list[str]
     api_key_prefix: str
@@ -223,6 +241,7 @@ class CreateIdentityResponse:
     def from_dict(cls, data: dict[str, Any]) -> CreateIdentityResponse:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
+            purpose=data["purpose"],
             email_address=data["emailAddress"], scopes=data.get("scopes", []),
             api_key_prefix=data["apiKeyPrefix"], raw_key=data["rawKey"],
             created_at=data["createdAt"],

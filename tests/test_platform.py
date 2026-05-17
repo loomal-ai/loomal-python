@@ -43,7 +43,7 @@ class TestPlatformIdentitiesResource:
     def test_create(self):
         respx.post("https://api.loomal.ai/v0/platform/identities").mock(
             return_value=httpx.Response(201, json={
-                "identityId": "id-123", "name": "Agent", "type": "INBOX",
+                "identityId": "id-123", "name": "Agent", "type": "INBOX", "purpose": "BUYER",
                 "emailAddress": "agent@mailgent.dev", "scopes": ["mail:read"],
                 "apiKeyPrefix": "loid-abc1", "rawKey": "loid-abc123",
                 "createdAt": "2026-01-01T00:00:00Z",
@@ -59,7 +59,7 @@ class TestPlatformIdentitiesResource:
     def test_list(self):
         respx.get("https://api.loomal.ai/v0/platform/identities").mock(
             return_value=httpx.Response(200, json={
-                "identities": [{"identityId": "id-1", "name": "Agent", "type": "INBOX",
+                "identities": [{"identityId": "id-1", "name": "Agent", "type": "INBOX", "purpose": "BUYER",
                                 "email": "a@b.dev", "scopes": ["mail:read"],
                                 "usageCount": 5, "lastUsedAt": None, "createdAt": "2026-01-01T00:00:00Z"}],
                 "count": 1,
@@ -75,7 +75,7 @@ class TestPlatformIdentitiesResource:
     def test_get(self):
         respx.get("https://api.loomal.ai/v0/platform/identities/id-123").mock(
             return_value=httpx.Response(200, json={
-                "identityId": "id-123", "name": "Agent", "type": "INBOX",
+                "identityId": "id-123", "name": "Agent", "type": "INBOX", "purpose": "BUYER",
                 "email": "a@b.dev", "scopes": ["mail:read"], "apiKeyPrefix": "loid-abc1",
                 "usageCount": 5, "lastUsedAt": None, "createdAt": "2026-01-01T00:00:00Z",
             }))
