@@ -3,8 +3,71 @@ import json
 import pytest
 import respx
 
-from loomal import Loomal, AsyncLoomal
+from loomal import Loomal, AsyncLoomal, LoomalError
 from loomal.types import PaymentDetail, PaymentSummary
+
+
+PAY_SUCCESS_BODY = {
+    "ok": True,
+    "status": 200,
+    "content": {"result": "ok"},
+    "contentType": "application/json",
+    "cost": {"amountUsdc": "0.05", "amountUsdcRaw": "50000", "network": "base"},
+    "txHash": "0xtxhash",
+    "payer": "0xpayer",
+    "recipient": "0xrecipient",
+    "resource": "https://seller.example.com/search",
+    "balanceAfter": {"usdc": "0.95", "usdcRaw": "950000"},
+    "mandate": {
+        "mandateId": "m-1",
+        "spentTodayUsdcRaw": "50000",
+        "dailyCapUsdcRaw": "1000000",
+        "remainingTodayUsdcRaw": "950000",
+        "validUntil": "2027-01-01T00:00:00.000Z",
+    },
+}
+
+PAY_FAILURE_BODY = {
+    "ok": False,
+    "code": "mandate_per_call_exceeded",
+    "message": "Price 0.50 USDC exceeds maxPerCallUsdc 0.10",
+    "hint": "Raise maxPerCallUsdc on the mandate or pay a cheaper endpoint",
+    "resource": "https://seller.example.com/search",
+    "cost": {"amountUsdc": "0.50", "network": "base"},
+}
+
+ACTIVITY_BODY = {
+    "activity": [
+        {
+            "id": "po-1",
+            "direction": "out",
+            "network": "base",
+            "amountUsdcRaw": "50000",
+            "counterparty": "0xseller",
+            "resource": "https://seller.example.com/search",
+            "txHash": "0xtxout",
+            "status": "settled",
+            "failureReason": None,
+            "createdAt": "2026-05-12T10:00:00.000Z",
+            "mandateId": "m-1",
+        },
+        {
+            "id": "pi-1",
+            "direction": "in",
+            "network": "base",
+            "amountUsdcRaw": "25000",
+            "counterparty": "0xbuyer",
+            "resource": "https://you.example.com/api",
+            "txHash": "0xtxin",
+            "status": "settled",
+            "failureReason": None,
+            "createdAt": "2026-05-11T09:00:00.000Z",
+            "endpointId": "se_abc",
+            "endpoint": {"id": "se_abc", "urlPattern": "https://you.example.com/api"},
+        },
+    ],
+    "count": 2,
+}
 
 
 CHALLENGE_BODY = {
@@ -154,6 +217,150 @@ class TestPaymentsResource:
         client.close()
 
     @respx.mock
+    def test_pay_success(self):
+        route = respx.post("https://api.loomal.ai/v0/payments/pay").mock(
+            return_value=httpx.Response(200, json=PAY_SUCCESS_BODY)
+        )
+        client = Loomal(api_key="loid-test")
+        result = client.payments.pay(url="https://seller.example.com/search")
+
+        assert result["ok"] is True
+        assert result["txHash"] == "0xtxhash"
+        assert result["cost"]["amountUsdc"] == "0.05"
+        assert result["content"] == {"result": "ok"}
+
+        body = json.loads(route.calls[0].request.content)
+        assert body["url"] == "https://seller.example.com/search"
+        assert "dryRun" not in body
+        client.close()
+
+    @respx.mock
+    def test_pay_failure_pass_through(self):
+        respx.post("https://api.loomal.ai/v0/payments/pay").mock(
+            return_value=httpx.Response(402, json=PAY_FAILURE_BODY)
+        )
+        client = Loomal(api_key="loid-test")
+        result = client.payments.pay(url="https://seller.example.com/search")
+
+        assert result["ok"] is False
+        assert result["code"] == "mandate_per_call_exceeded"
+        assert "exceeds maxPerCallUsdc" in result["message"]
+        client.close()
+
+    @respx.mock
+    def test_pay_forwards_dry_run(self):
+        route = respx.post("https://api.loomal.ai/v0/payments/pay").mock(
+            return_value=httpx.Response(200, json=PAY_SUCCESS_BODY)
+        )
+        client = Loomal(api_key="loid-test")
+        client.payments.pay(url="https://seller.example.com/search", dry_run=True)
+
+        body = json.loads(route.calls[0].request.content)
+        assert body["dryRun"] is True
+        client.close()
+
+    @respx.mock
+    def test_pay_raises_on_malformed_body(self):
+        respx.post("https://api.loomal.ai/v0/payments/pay").mock(
+            return_value=httpx.Response(401, json={"error": "unauthorized", "message": "missing scope"})
+        )
+        client = Loomal(api_key="loid-test")
+        with pytest.raises(LoomalError, match="discriminator"):
+            client.payments.pay(url="https://seller.example.com/search")
+        client.close()
+
+    @respx.mock
+    def test_activity(self):
+        route = respx.get("https://api.loomal.ai/v0/payments/activity").mock(
+            return_value=httpx.Response(200, json=ACTIVITY_BODY)
+        )
+        client = Loomal(api_key="loid-test")
+        result = client.payments.activity()
+
+        assert result["count"] == 2
+        assert result["activity"][0]["direction"] == "out"
+        assert result["activity"][1]["direction"] == "in"
+        assert result["activity"][1]["endpoint"]["urlPattern"] == "https://you.example.com/api"
+        assert "limit=" not in str(route.calls[0].request.url)
+        client.close()
+
+    @respx.mock
+    def test_activity_with_limit(self):
+        route = respx.get("https://api.loomal.ai/v0/payments/activity").mock(
+            return_value=httpx.Response(200, json={"activity": [], "count": 0})
+        )
+        client = Loomal(api_key="loid-test")
+        client.payments.activity(limit=25)
+
+        assert "limit=25" in str(route.calls[0].request.url)
+        client.close()
+
+    @respx.mock
+    def test_mandates_create(self):
+        body = {
+            "mandateId": "m_abc",
+            "identityId": "id-1",
+            "network": "base",
+            "maxPerCallUsdc": "0.10",
+            "dailyCapUsdc": "1.00",
+            "validUntil": "2027-01-01T00:00:00.000Z",
+            "sessionKeyAddress": "0xsession",
+            "onchainInstalled": True,
+            "installTxHash": "0xinstall",
+            "installError": None,
+            "spentTodayUsdc": "0",
+            "remainingTodayUsdc": "1.00",
+            "totalSpentUsdc": "0",
+            "callCount": 0,
+            "revokedAt": None,
+            "createdAt": "2026-05-12T10:00:00.000Z",
+        }
+        route = respx.post("https://api.loomal.ai/v0/payments/mandates").mock(
+            return_value=httpx.Response(200, json=body)
+        )
+        client = Loomal(api_key="loid-test")
+        m = client.payments.mandates.create(
+            max_per_call_usdc="0.10",
+            daily_cap_usdc="1.00",
+        )
+
+        assert m["mandateId"] == "m_abc"
+        assert m["installError"] is None
+
+        sent = json.loads(route.calls[0].request.content)
+        assert sent["maxPerCallUsdc"] == "0.10"
+        assert sent["dailyCapUsdc"] == "1.00"
+        assert "network" not in sent  # not forwarded when omitted
+        client.close()
+
+    @respx.mock
+    def test_mandates_list(self):
+        respx.get("https://api.loomal.ai/v0/payments/mandates").mock(
+            return_value=httpx.Response(200, json={"mandates": []})
+        )
+        client = Loomal(api_key="loid-test")
+        result = client.payments.mandates.list()
+        assert result == {"mandates": []}
+        client.close()
+
+    @respx.mock
+    def test_mandates_get_and_revoke(self):
+        get_route = respx.get("https://api.loomal.ai/v0/payments/mandates/m_abc").mock(
+            return_value=httpx.Response(200, json={"mandateId": "m_abc"})
+        )
+        delete_route = respx.delete("https://api.loomal.ai/v0/payments/mandates/m_abc").mock(
+            return_value=httpx.Response(204)
+        )
+        client = Loomal(api_key="loid-test")
+        m = client.payments.mandates.get("m_abc")
+        assert m["mandateId"] == "m_abc"
+        client.payments.mandates.revoke("m_abc")
+
+        assert get_route.called
+        assert delete_route.called
+        client.close()
+
+    @respx.mock
     def test_get(self):
         respx.get("https://api.loomal.ai/v0/payments/pay-1").mock(
             return_value=httpx.Response(200, json=DETAIL_BODY)
@@ -183,6 +390,29 @@ class TestAsyncPaymentsResource:
         client = AsyncLoomal(api_key="loid-test")
         result = await client.payments.challenge(amount="0.05", resource="https://example.com/api")
         assert result["x402Version"] == 1
+        await client.close()
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_pay_async(self):
+        respx.post("https://api.loomal.ai/v0/payments/pay").mock(
+            return_value=httpx.Response(200, json=PAY_SUCCESS_BODY)
+        )
+        client = AsyncLoomal(api_key="loid-test")
+        result = await client.payments.pay(url="https://seller.example.com/search")
+        assert result["ok"] is True
+        assert result["txHash"] == "0xtxhash"
+        await client.close()
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_activity_async(self):
+        respx.get("https://api.loomal.ai/v0/payments/activity").mock(
+            return_value=httpx.Response(200, json=ACTIVITY_BODY)
+        )
+        client = AsyncLoomal(api_key="loid-test")
+        result = await client.payments.activity(limit=10)
+        assert result["count"] == 2
         await client.close()
 
     @respx.mock

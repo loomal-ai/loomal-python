@@ -47,6 +47,16 @@ class SyncHttpClient:
     def post(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
         return _handle_response(self._client.post(path, json=json))
 
+    def post_unchecked(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
+        """POST that does not raise on 4xx/5xx — returns the parsed JSON body
+        verbatim. Use for endpoints that encode success/failure in the body
+        (e.g. ``/v0/payments/pay`` returns ``{"ok": ...}`` with status 200,
+        402, or 503)."""
+        response = self._client.post(path, json=json)
+        if response.status_code == 204:
+            return None
+        return response.json() if response.content else {}
+
     def put(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
         return _handle_response(self._client.put(path, json=json))
 
@@ -73,6 +83,13 @@ class AsyncHttpClient:
 
     async def post(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
         return _handle_response(await self._client.post(path, json=json))
+
+    async def post_unchecked(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
+        """Async sibling of :meth:`SyncHttpClient.post_unchecked`."""
+        response = await self._client.post(path, json=json)
+        if response.status_code == 204:
+            return None
+        return response.json() if response.content else {}
 
     async def put(self, path: str, json: Optional[dict[str, Any]] = None) -> Any:
         return _handle_response(await self._client.put(path, json=json))

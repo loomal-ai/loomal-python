@@ -11,10 +11,14 @@ from loomal.types import (
     ActivityLog, LogsStats, TotpResponse, TotpBackupResponse, DidDocument,
     PaymentEndpointSummary, PaymentSummary, PaymentReceiptBody,
     PaymentReceipt, PaymentDetail,
+    PAYMENT_ERROR_CODES, PaymentErrorCode,
+    PaymentsPayParams, PaymentsPaySuccess, PaymentsPayFailure, PaymentsPayResponse,
+    PaymentActivityIn, PaymentActivityOut, PaymentActivityRow, PaymentActivityList,
+    Mandate, MandateCreateParams, MandateList,
 )
 from loomal._errors import LoomalError
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "Loomal", "AsyncLoomal",
@@ -30,4 +34,8 @@ __all__ = [
     "ActivityLog", "LogsStats", "TotpResponse", "DidDocument",
     "PaymentEndpointSummary", "PaymentSummary", "PaymentReceiptBody",
     "PaymentReceipt", "PaymentDetail",
+    "PAYMENT_ERROR_CODES", "PaymentErrorCode",
+    "PaymentsPayParams", "PaymentsPaySuccess", "PaymentsPayFailure", "PaymentsPayResponse",
+    "PaymentActivityIn", "PaymentActivityOut", "PaymentActivityRow", "PaymentActivityList",
+    "Mandate", "MandateCreateParams", "MandateList",
 ]
