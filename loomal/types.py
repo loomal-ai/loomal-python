@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict
+from typing import Any, Literal, Optional, TypedDict, Union
 
 
 VaultCredentialType = Literal[
@@ -500,3 +500,185 @@ class PaymentDetail:
             settled_at=data.get("settledAt"),
             signed_receipt=PaymentReceipt.from_dict(data["signedReceipt"]),
         )
+
+
+# --- x402 buyer-side: pay() params, error codes, and response shape ---
+#
+# Returned as a dict (not a dataclass) to preserve the discriminated-union
+# shape — branch on ``result["ok"]``. The TypedDicts give type checkers a
+# usable view without forcing a parse step.
+
+PAYMENT_ERROR_CODES = {
+    "MANDATE_NOT_FOUND": "mandate_not_found",
+    "MANDATE_EXPIRED": "mandate_expired",
+    "MANDATE_REVOKED": "mandate_revoked",
+    "MANDATE_DAILY_CAP_EXCEEDED": "mandate_daily_cap_exceeded",
+    "MANDATE_PER_CALL_EXCEEDED": "mandate_per_call_exceeded",
+    "SESSION_KEY_NOT_INSTALLED": "session_key_not_installed",
+    "SESSION_KEY_INSTALL_FAILED": "session_key_install_failed",
+    "WALLET_NOT_PROVISIONED": "wallet_not_provisioned",
+    "BALANCE_INSUFFICIENT": "balance_insufficient",
+    "URL_NOT_X402": "url_not_x402",
+    "NETWORK_UNSUPPORTED": "network_unsupported",
+    "NETWORK_MISMATCH": "network_mismatch",
+    "PAYMENT_RESPONSE_INVALID": "payment_response_invalid",
+    "SETTLE_FAILED": "settle_failed",
+    "FACILITATOR_UNAVAILABLE": "facilitator_unavailable",
+    "PAYMENTS_DISABLED": "payments_disabled",
+    "UNAUTHORIZED": "unauthorized",
+}
+
+PaymentErrorCode = Literal[
+    "mandate_not_found",
+    "mandate_expired",
+    "mandate_revoked",
+    "mandate_daily_cap_exceeded",
+    "mandate_per_call_exceeded",
+    "session_key_not_installed",
+    "session_key_install_failed",
+    "wallet_not_provisioned",
+    "balance_insufficient",
+    "url_not_x402",
+    "network_unsupported",
+    "network_mismatch",
+    "payment_response_invalid",
+    "settle_failed",
+    "facilitator_unavailable",
+    "payments_disabled",
+    "unauthorized",
+]
+
+
+class PaymentsPayCost(TypedDict):
+    amountUsdc: str
+    amountUsdcRaw: str
+    network: str
+
+
+class PaymentsPayBalanceAfter(TypedDict):
+    usdc: str
+    usdcRaw: str
+
+
+class PaymentsPayMandate(TypedDict):
+    mandateId: str
+    spentTodayUsdcRaw: str
+    dailyCapUsdcRaw: str
+    remainingTodayUsdcRaw: str
+    validUntil: str
+
+
+class PaymentsPaySuccess(TypedDict, total=False):
+    """Returned when ``ok`` is True. ``content`` is the parsed JSON body
+    from the seller when ``application/json``; ``contentText`` carries the
+    raw body otherwise."""
+    ok: Literal[True]
+    status: int
+    content: Any
+    contentText: str
+    contentType: str
+    cost: PaymentsPayCost
+    txHash: Optional[str]
+    payer: str
+    recipient: str
+    resource: str
+    balanceAfter: PaymentsPayBalanceAfter
+    mandate: PaymentsPayMandate
+    receipt: Any
+
+
+class PaymentsPayFailureCost(TypedDict):
+    amountUsdc: str
+    network: str
+
+
+class PaymentsPayFailure(TypedDict, total=False):
+    """Returned when ``ok`` is False. ``code`` is a stable identifier from
+    :data:`PAYMENT_ERROR_CODES`; ``hint`` is a one-line remediation."""
+    ok: Literal[False]
+    code: PaymentErrorCode
+    message: str
+    hint: str
+    retryAfterMs: int
+    resource: str
+    cost: PaymentsPayFailureCost
+
+
+PaymentsPayResponse = Union[PaymentsPaySuccess, PaymentsPayFailure]
+
+
+class PaymentsPayParams(TypedDict, total=False):
+    url: str
+    dryRun: bool
+
+
+# --- Bank-statement-style activity feed (buyer + seller, merged) ---
+
+
+class _PaymentActivityCommon(TypedDict):
+    id: str
+    network: str
+    amountUsdcRaw: str
+    counterparty: str
+    resource: Optional[str]
+    txHash: Optional[str]
+    status: str
+    failureReason: Optional[str]
+    createdAt: str
+
+
+class PaymentActivityEndpoint(TypedDict):
+    id: str
+    urlPattern: str
+
+
+class PaymentActivityIn(_PaymentActivityCommon, total=False):
+    direction: Literal["in"]
+    endpointId: Optional[str]
+    endpoint: Optional[PaymentActivityEndpoint]
+
+
+class PaymentActivityOut(_PaymentActivityCommon, total=False):
+    direction: Literal["out"]
+    mandateId: Optional[str]
+
+
+PaymentActivityRow = Union[PaymentActivityIn, PaymentActivityOut]
+
+
+class PaymentActivityList(TypedDict):
+    activity: list[PaymentActivityRow]
+    count: int
+
+
+# --- Mandates: spend policy attached to a project's wallet ---
+
+
+class MandateCreateParams(TypedDict, total=False):
+    maxPerCallUsdc: str
+    dailyCapUsdc: str
+    network: str
+    validUntil: str
+
+
+class Mandate(TypedDict, total=False):
+    mandateId: str
+    identityId: str
+    network: str
+    maxPerCallUsdc: str
+    dailyCapUsdc: str
+    validUntil: str
+    sessionKeyAddress: str
+    onchainInstalled: bool
+    installTxHash: Optional[str]
+    installError: Optional[str]
+    spentTodayUsdc: str
+    remainingTodayUsdc: str
+    totalSpentUsdc: str
+    callCount: int
+    revokedAt: Optional[str]
+    createdAt: str
+
+
+class MandateList(TypedDict):
+    mandates: list[Mandate]
