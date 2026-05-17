@@ -54,12 +54,13 @@ class TestIdentityResponse:
     def test_from_dict(self):
         identity = IdentityResponse.from_dict({
             "identityId": "id-123", "name": "Sales", "email": "sales@mailgent.dev",
-            "displayName": "Sales Agent", "type": "INBOX",
+            "displayName": "Sales Agent", "type": "INBOX", "purpose": "BUYER",
             "scopes": ["mail:read", "mail:send"], "usageCount": 42,
             "lastUsedAt": "2026-01-01T00:00:00Z", "createdAt": "2025-12-01T00:00:00Z",
         })
         assert identity.identity_id == "id-123"
         assert identity.usage_count == 42
+        assert identity.purpose == "BUYER"
 
 
 class TestLogsStats:
