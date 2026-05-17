@@ -152,16 +152,13 @@ class CredentialWithData(CredentialMetadata):
 
 IdentityPurpose = Literal["SELLER", "BUYER"]
 """SELLER projects accept x402 payments on registered endpoints (their server
-imports loomal.paywall.* middleware). BUYER projects spend via mandates and own
-the agent infrastructure (inbox, vault, calendar, identity signing) used by
-autonomous agents. Branch on this when your code needs to behave differently
-per role.
-"""
+imports loomal.paywall.* middleware). BUYER projects spend via mandates and
+own the agent infrastructure (inbox, vault, calendar, identity signing) used
+by autonomous agents.
 
-#: Default applied client-side when ``purpose`` is absent from a server response.
-#: Matches the Prisma backfill (legacy identities are treated as BUYER) so client
-#: code never has to handle a ``None`` purpose during the rollout window.
-DEFAULT_IDENTITY_PURPOSE: IdentityPurpose = "BUYER"
+Picked at project creation; BUYER is the default. Branch on this when your
+code needs to behave differently per role.
+"""
 
 
 @dataclass
@@ -171,8 +168,7 @@ class IdentityResponse:
     email: str
     display_name: str
     type: str
-    #: ``"SELLER"`` or ``"BUYER"``. Defaults to ``"BUYER"`` on legacy identities
-    #: created before the split was rolled out (matches the server-side backfill).
+    #: ``"SELLER"`` or ``"BUYER"``. Set at project creation; BUYER is the default.
     purpose: IdentityPurpose
     scopes: list[str]
     usage_count: int
@@ -184,7 +180,7 @@ class IdentityResponse:
         return cls(
             identity_id=data["identityId"], name=data["name"],
             email=data.get("email", ""), display_name=data.get("displayName", ""),
-            type=data["type"], purpose=data.get("purpose") or DEFAULT_IDENTITY_PURPOSE,
+            type=data["type"], purpose=data["purpose"],
             scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"],
@@ -207,7 +203,7 @@ class IdentitySummary:
     def from_dict(cls, data: dict[str, Any]) -> IdentitySummary:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
-            purpose=data.get("purpose") or DEFAULT_IDENTITY_PURPOSE,
+            purpose=data["purpose"],
             email=data.get("email"), scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"],
@@ -222,7 +218,7 @@ class IdentityDetail(IdentitySummary):
     def from_dict(cls, data: dict[str, Any]) -> IdentityDetail:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
-            purpose=data.get("purpose") or DEFAULT_IDENTITY_PURPOSE,
+            purpose=data["purpose"],
             email=data.get("email"), scopes=data.get("scopes", []),
             usage_count=data.get("usageCount", 0), last_used_at=data.get("lastUsedAt"),
             created_at=data["createdAt"], api_key_prefix=data.get("apiKeyPrefix", ""),
@@ -245,7 +241,7 @@ class CreateIdentityResponse:
     def from_dict(cls, data: dict[str, Any]) -> CreateIdentityResponse:
         return cls(
             identity_id=data["identityId"], name=data["name"], type=data.get("type", "INBOX"),
-            purpose=data.get("purpose") or DEFAULT_IDENTITY_PURPOSE,
+            purpose=data["purpose"],
             email_address=data["emailAddress"], scopes=data.get("scopes", []),
             api_key_prefix=data["apiKeyPrefix"], raw_key=data["rawKey"],
             created_at=data["createdAt"],
