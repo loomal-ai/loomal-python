@@ -49,7 +49,7 @@ class TestPlatformIdentitiesResource:
                 "createdAt": "2026-01-01T00:00:00Z",
             }))
         client = LoomalPlatform(api_key="lopk-test")
-        result = client.identities.create("Agent", "agent", ["mail:read"])
+        result = client.identities.create(name="Agent", email_name="agent", scopes=["mail:read"])
         assert isinstance(result, CreateIdentityResponse)
         assert result.identity_id == "id-123"
         assert result.raw_key.startswith("loid-")
